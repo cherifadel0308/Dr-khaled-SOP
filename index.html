@@ -21,7 +21,11 @@ button,input,textarea{font:inherit;color:inherit}
 header{background:#061230;color:#fff;padding:12px 16px;border-bottom:4px solid var(--brand-red);display:flex;align-items:center;gap:12px}
 .logo{display:flex;align-items:center}.logo svg{flex:none}.logo b{display:block;font-weight:900;line-height:1.2}.logo small{display:block;font-size:11px;letter-spacing:.5px;direction:ltr;text-align:right}
 .logo-img{width:56px;height:56px;border-radius:50%;flex:none}#sheet .logo-img,#sheet-pdf .logo-img{width:72px;height:72px}
-.dept-other{margin-top:8px}
+.depts{margin:12px 0 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+.depts legend{font-size:14px;font-weight:600;color:inherit;padding:0 6px}
+label.chk{display:flex;align-items:center;gap:10px;margin:0;padding:9px 6px;font-weight:400;border-bottom:1px solid var(--line);cursor:pointer}
+label.chk:last-child{border-bottom:0}
+label.chk input{width:22px;height:22px;flex:none;padding:0;accent-color:var(--teal)}
 select{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--card);font:inherit;color:inherit}
 header h1{margin:0;font-size:19px;font-weight:900}
 header p{margin:2px 0 0;font-size:13px;opacity:.85;color:#bfe6f5}
@@ -116,8 +120,8 @@ td:first-child{text-align:center;font-weight:900;color:var(--teal-d)}
       <label>الكود <input data-f="code" dir="ltr" placeholder="SOP-SCM-02"></label>
       <label>الإصدار <input data-f="ver" dir="ltr" placeholder="Draft 0.1"></label>
     </div>
-    <label>الإدارة المسؤولة <select data-f="dept"><option value="">— اختر الإدارة —</option><option>سلاسل الإمداد — المشتريات المباشرة والاستيراد</option><option>سلاسل الإمداد — المشتريات غير المباشرة</option><option>العمليات والفروع والفانات</option><option>التجاري والكول سنتر 19465</option><option>الجودة الفنية والتدريب (Master Tech)</option><option>المالية والمراجعة الداخلية</option><option>الموارد البشرية والإدارة</option><option>تقنية المعلومات وأنظمة ERP</option><option value="__other">أخرى (اكتبها)</option></select></label>
-    <input class="dept-other" data-f="deptOther" placeholder="اكتب اسم الإدارة" hidden>
+    <fieldset class="depts"><legend>الإدارات المسؤولة <span class="hint">يمكن اختيار أكثر من إدارة</span></legend><label class="chk"><input type="checkbox" data-d="سلاسل الإمداد — المشتريات المباشرة والاستيراد"> سلاسل الإمداد — المشتريات المباشرة والاستيراد</label><label class="chk"><input type="checkbox" data-d="سلاسل الإمداد — المشتريات غير المباشرة"> سلاسل الإمداد — المشتريات غير المباشرة</label><label class="chk"><input type="checkbox" data-d="العمليات والفروع والفانات"> العمليات والفروع والفانات</label><label class="chk"><input type="checkbox" data-d="التجاري والكول سنتر 19465"> التجاري والكول سنتر 19465</label><label class="chk"><input type="checkbox" data-d="الجودة الفنية والتدريب (Master Tech)"> الجودة الفنية والتدريب (Master Tech)</label><label class="chk"><input type="checkbox" data-d="المالية والمراجعة الداخلية"> المالية والمراجعة الداخلية</label><label class="chk"><input type="checkbox" data-d="الموارد البشرية والإدارة"> الموارد البشرية والإدارة</label><label class="chk"><input type="checkbox" data-d="تقنية المعلومات وأنظمة ERP"> تقنية المعلومات وأنظمة ERP</label></fieldset>
+    <label>إدارة أخرى (اختياري) <input data-f="deptOther" placeholder="اكتب اسم إدارة غير موجودة بالقائمة"></label>
   </fieldset>
 
   <fieldset>
@@ -161,22 +165,23 @@ td:first-child{text-align:center;font-weight:900;color:var(--teal-d)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const KEY='dk-sop-v1';
-const FIELDS=['title','code','ver','dept','deptOther','a','r','c','i','purpose','scope','inputs','red','kpi'];
+const FIELDS=['title','code','ver','deptOther','a','r','c','i','purpose','scope','inputs','red','kpi'];
 let S=load();
 
-function blank(){const o={steps:[{stage:'',action:'',owner:'',proof:''}]};FIELDS.forEach(f=>o[f]='');return o}
+function blank(){const o={depts:[],steps:[{stage:'',action:'',owner:'',proof:''}]};FIELDS.forEach(f=>o[f]='');return o}
 function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.steps)return v}catch(e){}return blank()}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const esc=t=>String(t||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const lines=t=>String(t||'').split('\n').map(l=>l.replace(/^[•\-*]\s*/,'').trim()).filter(Boolean);
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)}
 
-const deptName=()=>S.dept==='__other'?(S.deptOther||''):(S.dept||'');
+const deptName=()=>[...(S.depts||[]),...(S.deptOther?[S.deptOther]:[])].join('، ');
 const PFX={'سلاسل':'SCM','العمليات':'RET','التجاري':'COM','الجودة':'QA','المالية':'FIN','الموارد':'HR','تقنية':'IT'};
-function syncDept(){const sel=document.querySelector('[data-f="dept"]'),o=document.querySelector('[data-f="deptOther"]');o.hidden=S.dept!=='__other'}
-function fillForm(){const sel=document.querySelector('[data-f="dept"]');
-  if(S.dept&&![...sel.options].some(o=>o.value===S.dept||o.text===S.dept)){S.deptOther=S.dept;S.dept='__other'}
-  FIELDS.forEach(f=>document.querySelector(`[data-f="${f}"]`).value=S[f]||'');syncDept();renderSteps();renderSheet()}
+function fillForm(){
+  if(typeof S.dept==='string'&&S.dept&&!S.depts){S.depts=[];S.deptOther=S.dept}
+  S.depts=S.depts||[];
+  document.querySelectorAll('[data-d]').forEach(c=>c.checked=S.depts.includes(c.dataset.d));
+  FIELDS.forEach(f=>document.querySelector(`[data-f="${f}"]`).value=S[f]||'');renderSteps();renderSheet()}
 
 function renderSteps(){
   document.getElementById('steps').innerHTML=S.steps.map((s,i)=>`
@@ -201,7 +206,8 @@ function moveStep(i,d){const j=i+d;if(j<0||j>=S.steps.length)return;[S.steps[i],
 
 document.addEventListener('input',e=>{
   const f=e.target.dataset.f,s=e.target.dataset.s;
-  if(f){S[f]=e.target.value;if(f==='dept'){syncDept();const p=PFX[S.dept.split(' ')[0]];if(p&&!S.code){S.code='SOP-'+p+'-01';document.querySelector('[data-f="code"]').value=S.code}}}
+  if(f){S[f]=e.target.value}
+  else if(e.target.dataset.d){const d=e.target.dataset.d;S.depts=(S.depts||[]).filter(x=>x!==d);if(e.target.checked)S.depts.push(d);const p=PFX[(S.depts[0]||'').split(' ')[0]];if(p&&!S.code){S.code='SOP-'+p+'-01';document.querySelector('[data-f="code"]').value=S.code}}
   else if(s){const[i,k]=s.split('.');S.steps[+i][k]=e.target.value}
   else return;
   renderSheet();persist();
@@ -240,7 +246,7 @@ function newDoc(){if(!confirm('سيتم مسح الوثيقة الحالية. ه
 
 function loadSample(){
   S={title:'إجراء المشتريات غير المباشرة',code:'SOP-SCM-02',ver:'Draft 0.1',
-  dept:'سلاسل الإمداد — المشتريات غير المباشرة',
+  depts:['سلاسل الإمداد — المشتريات غير المباشرة'],deptOther:'',
   a:'Tant',r:'No3man (المخزن) • Mohamed (شراء الأدوات)',c:'الإدارة المالية',i:'مشرفو الفروع',
   purpose:'توحيد خطوات طلب وشراء واستلام وتسليم الأدوات والمعدات غير المرتبطة مباشرة بالزجاج، لمنع الشراء المتكرر وضبط العُهد.',
   scope:'جميع الفروع وأسطول الفانات والمخزن المركزي. لا يشمل الزجاج والمواد الخام (يغطيها SOP-SCM-01).',
